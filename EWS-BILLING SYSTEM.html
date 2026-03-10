@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EWS Coaching | Pro Billing System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #15803d;
+            --primary-hover: #166534;
+            --secondary: #dcfce7;
+            --accent: #22c55e;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --bg-body: #f0fdf4;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-body); color: var(--text-dark); margin: 0; padding: 30px 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        header { display: flex; align-items: center; background: linear-gradient(135deg, var(--primary), #065f46); color: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 30px; }
+        header img { height: 70px; margin-right: 25px; background: white; padding: 8px; border-radius: 8px; }
+        header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        
+        .card { background: var(--bg-card); padding: 25px 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .card h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: 500; margin-bottom: 6px; font-size: 13px; color: var(--text-muted); }
+        input, select { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background-color: #f9fafb; font-family: 'Poppins'; }
+        
+        .btn-main { background: linear-gradient(to right, var(--primary), var(--accent)); color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; margin-top: 15px; transition: transform 0.2s; }
+        .btn-main:hover { transform: translateY(-2px); }
+
+        .search-container { margin-bottom: 15px; display: flex; gap: 10px; }
+        .search-box { flex-grow: 1; padding: 10px 15px; border: 2px solid var(--secondary); border-radius: 8px; font-family: 'Poppins'; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: var(--secondary); color: var(--primary); }
+
+        .action-btn { border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-size: 12px; font-weight: 500; color: white; transition: 0.2s; }
+        .msg-btn { background-color: #25D366; }
+        .print-btn { background-color: #3b82f6; }
+        .del-btn { background-color: #ef4444; }
+        .excel-btn { background-color: #1d6f42; }
+
+        #qrSection { display: none; text-align: center; margin: 20px 0; padding: 20px; background: #f8fafc; border: 2px dashed var(--accent); border-radius: 12px; }
+        #qrSection img { max-width: 200px; border: 4px solid white; border-radius: 8px; }
+
+        .print-area { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { display: block; width: 100%; }
+            .receipt-copy { height: 47vh; box-sizing: border-box; padding: 20px; border: 2px solid #333; border-radius: 8px; margin-bottom: 2vh; position: relative; }
+            .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #15803d; padding-bottom: 15px; margin-bottom: 15px; }
+            .receipt-header img { height: 60px; margin-right: 20px; }
+            .receipt-title { flex-grow: 1; text-align: center; }
+            .receipt-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; }
+            .receipt-details span { font-weight: 600; }
+            .signatures { position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; }
+            .sig-line { border-top: 1px solid #333; width: 150px; text-align: center; padding-top: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container no-print">
+    <header>
+        <img src="ews_logo.jpg" alt="EWS Logo" onerror="this.style.display='none'">
+        <div>
+            <h1>EWS Coaching</h1>
+            <p>Enjoy With Subject • Advanced Fee Management</p>
+        </div>
+    </header>
+
+    <form id="feeForm">
+        <div class="card">
+            <h3>Student Details</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Registration No. (Autofills history)</label>
+                    <input type="text" id="regNo" placeholder="EWS-2026-01" required oninput="handleAutofill(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Serial No. (Auto)</label>
+                    <input type="text" id="serialNo" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <input type="text" id="studentName" placeholder="Enter Full Name" required>
+                </div>
+                <div class="form-group">
+                    <label>Mobile No.</label>
+                    <input type="tel" id="mobileNo" placeholder="10-digit number" required>
+                </div>
+                <div class="form-group">
+                    <label>Enrolled Course</label>
+                    <input type="text" id="course" placeholder="e.g. Class 10th Math" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Fee & Payment Details</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Actual Fee (₹)</label><input type="number" id="actualFee" oninput="calculateDues()"></div>
+                <div class="form-group"><label>Discounted Fee (₹)</label><input type="number" id="discountedFee" oninput="calculateDues()"></div>
+                <div class="form-group"><label>Prev. Fee Paid (₹)</label><input type="number" id="prevFee" value="0" oninput="calculateDues()"></div>
+                <div class="form-group"><label>Current Fee Paid (₹)</label><input type="number" id="currentFee" required oninput="calculateDues()"></div>
+                <div class="form-group"><label>Total Collected (₹)</label><input type="number" id="totalCollected" readonly></div>
+                <div class="form-group"><label>Due Amount (₹)</label><input type="number" id="dueAmount" readonly></div>
+                <div class="form-group"><label>Total Inst.</label><input type="number" id="totalInst" value="1"></div>
+                <div class="form-group"><label>Current Inst.</label><input type="number" id="currentInst" value="1"></div>
+                <div class="form-group"><label>Next Due Date</label><input type="date" id="dueDate"></div>
+                <div class="form-group">
+                    <label>Payment Mode</label>
+                    <select id="paymentMode" onchange="toggleUPI()"><option value="Cash">Cash</option><option value="UPI">UPI / PhonePe</option><option value="Bank">Bank Transfer</option></select>
+                </div>
+            </div>
+            <div id="qrSection"><p>Scan to Pay via UPI</p><img src="qr_code.jpg" alt="QR Code"></div>
+            <button type="button" class="btn-main" onclick="processReceipt()">Generate & Print Receipt</button>
+        </div>
+    </form>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin:0; border:0;">Student Ledger</h3>
+            <button class="action-btn excel-btn" onclick="downloadExcel()">📊 Download Excel</button>
+        </div>
+        <div class="search-container">
+            <input type="text" id="ledgerSearch" class="search-box" placeholder="Search by name, registration, or course..." onkeyup="filterLedger()">
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Reg No.</th><th>Name</th><th>Course</th><th>Total Paid</th><th>Due</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="ledgerBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="printArea" class="print-area">
+    <div class="receipt-copy" id="officeCopy"></div>
+    <div class="receipt-copy" id="parentCopy"></div>
+</div>
+
+<script>
+    let currentSerial = localStorage.getItem('ews_serial') || 1000;
+    let ledgerData = JSON.parse(localStorage.getItem('ews_ledger_data')) || [];
+
+    window.onload = function() {
+        document.getElementById('serialNo').value = "EWS-" + currentSerial;
+        document.getElementById('date').valueAsDate = new Date();
+        renderLedgerTable();
+    };
+
+    function calculateDues() {
+        let disc = parseFloat(document.getElementById('discountedFee').value) || 0;
+        let prev = parseFloat(document.getElementById('prevFee').value) || 0;
+        let curr = parseFloat(document.getElementById('currentFee').value) || 0;
+        let total = prev + curr;
+        document.getElementById('totalCollected').value = total;
+        document.getElementById('dueAmount').value = Math.max(0, disc - total);
+    }
+
+    function toggleUPI() {
+        let mode = document.getElementById('paymentMode').value;
+        document.getElementById('qrSection').style.display = (mode === 'UPI') ? 'block' : 'none';
+    }
+
+    function handleAutofill(reg) {
+        if (!reg) return;
+        const student = ledgerData.find(s => s.regNo.toLowerCase() === reg.toLowerCase());
+        if (student) {
+            document.getElementById('studentName').value = student.name;
+            document.getElementById('mobileNo').value = student.mobile;
+            document.getElementById('course').value = student.course;
+            document.getElementById('prevFee').value = student.totalPaid;
+            calculateDues();
+        }
+    }
+
+    function filterLedger() {
+        let val = document.getElementById('ledgerSearch').value.toLowerCase();
+        let rows = document.getElementById('ledgerBody').getElementsByTagName('tr');
+        for (let row of rows) { row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none"; }
+    }
+
+    function processReceipt() {
+        if(!document.getElementById('studentName').value || !document.getElementById('currentFee').value) {
+            alert("Fill Name and Payment!"); return;
+        }
+
+        let data = {
+            id: Date.now(),
+            date: document.getElementById('date').value,
+            serial: document.getElementById('serialNo').value,
+            name: document.getElementById('studentName').value,
+            regNo: document.getElementById('regNo').value,
+            mobile: document.getElementById('mobileNo').value,
+            course: document.getElementById('course').value,
+            actual: document.getElementById('actualFee').value || 0,
+            discounted: document.getElementById('discountedFee').value || 0,
+            currentPaid: document.getElementById('currentFee').value || 0,
+            totalPaid: (parseFloat(document.getElementById('prevFee').value) || 0) + parseFloat(document.getElementById('currentFee').value),
+            dueAmt: document.getElementById('dueAmount').value || 0,
+            dueDate: document.getElementById('dueDate').value || 'N/A',
+            mode: document.getElementById('paymentMode').value,
+            inst: `${document.getElementById('currentInst').value}/${document.getElementById('totalInst').value}`
+        };
+
+        ledgerData.push(data);
+        localStorage.setItem('ews_ledger_data', JSON.stringify(ledgerData));
+        currentSerial++;
+        localStorage.setItem('ews_serial', currentSerial);
+        
+        buildPrintLayout(data);
+        renderLedgerTable();
+        window.print();
+        location.reload();
+    }
+
+    function renderLedgerTable() {
+        let tbody = document.getElementById('ledgerBody');
+        tbody.innerHTML = '';
+        [...ledgerData].reverse().forEach(item => {
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.date}</td><td>${item.regNo}</td><td>${item.name}</td><td>${item.course}</td>
+                <td style="color:var(--primary); font-weight:bold;">₹${item.totalPaid}</td>
+                <td style="color:#ef4444; font-weight:bold;">₹${item.dueAmt}</td>
+                <td>
+                    <button class="action-btn msg-btn" onclick="sendWA('${item.mobile}','${item.name}','${item.dueAmt}')">WA</button>
+                    <button class="action-btn print-btn" onclick="reprint(${item.id})">Reprint</button>
+                    <button class="action-btn del-btn" onclick="deleteEntry(${item.id})">Del</button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function reprint(id) {
+        const data = ledgerData.find(x => x.id === id);
+        if(data) { buildPrintLayout(data); window.print(); }
+    }
+
+    function deleteEntry(id) {
+        if(confirm("Delete record?")) {
+            ledgerData = ledgerData.filter(i => i.id !== id);
+            localStorage.setItem('ews_ledger_data', JSON.stringify(ledgerData));
+            renderLedgerTable();
+        }
+    }
+
+    function sendWA(mob, name, due) {
+        window.open(`https://wa.me/91${mob}?text=Hi ${name}, your pending fee is ₹${due}. - EWS Coaching`);
+    }
+
+    function downloadExcel() {
+        if(ledgerData.length === 0) { alert("No data to export!"); return; }
+        const ws = XLSX.utils.json_to_sheet(ledgerData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Ledger");
+        XLSX.writeFile(wb, "EWS_Ledger.xlsx");
+    }
+
+    function buildPrintLayout(data) {
+        const html = (type) => `
+            <div class="receipt-header">
+                <img src="ews_logo.jpg" alt="Logo" onerror="this.style.display='none'">
+                <div class="receipt-title">
+                    <h2 style="margin:0; color:#15803d;">EWS COACHING</h2>
+                    <p style="margin:0; font-size:12px;">Enjoy With Subject • FEE RECEIPT (${type})</p>
+                </div>
+            </div>
+            <div class="receipt-details">
+                <div><span>Receipt:</span> ${data.serial}</div><div><span>Date:</span> ${data.date}</div>
+                <div><span>Reg No:</span> ${data.regNo}</div><div><span>Student:</span> ${data.name}</div>
+                <div><span>Course:</span> ${data.course}</div><div><span>Paid Today:</span> ₹${data.currentPaid}</div>
+                <div><span>Total Paid:</span> ₹${data.totalPaid}</div><div><span>Due:</span> ₹${data.dueAmt}</div>
+                <div><span>Installment:</span> ${data.inst}</div><div><span>Mode:</span> ${data.mode}</div>
+            </div>
+            <div class="signatures"><div class="sig-line">Parent Signature</div><div class="sig-line">Director</div></div>`;
+        document.getElementById('officeCopy').innerHTML = html("OFFICE COPY");
+        document.getElementById('parentCopy').innerHTML = html("STUDENT COPY");
+    }
+</script>
+</body>
+</html>
