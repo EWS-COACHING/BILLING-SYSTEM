@@ -3,347 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EWS Coaching | Pro Billing System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>EWS Coaching Fee System - Dual Receipt</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --primary: #15803d;
-            --primary-hover: #166534;
-            --secondary: #dcfce7;
-            --accent: #22c55e;
-            --text-dark: #1f2937;
-            --bg-body: #f0fdf4;
-            --bg-card: #ffffff;
-            --border-color: #e5e7eb;
-        }
-
-        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-body); color: var(--text-dark); margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; }
-
-        header {
-            display: flex; align-items: center; background: linear-gradient(135deg, var(--primary), #065f46);
-            color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .logo-img { height: 70px; width: 70px; object-fit: contain; background: white; padding: 5px; border-radius: 8px; margin-right: 20px; }
-
-        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .dash-card { background: var(--bg-card); padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
-        .dash-card h4 { margin: 0; font-size: 11px; color: #666; text-transform: uppercase; }
-        .dash-card p { margin: 5px 0; font-size: 18px; font-weight: 700; color: var(--primary); }
+        body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#f0f2f5;margin:0;color:#333;}
+        header{background:#1b5e20;color:white;display:flex;align-items:center;justify-content:center;padding:15px 20px;box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+        .main-logo-container { text-align: center; padding: 20px 0 10px 0; }
+        .main-logo { width: 120px; height: auto; border-radius: 10px; background: white; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container{padding:20px;max-width:1200px;margin:auto;}
+        .form-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:15px;}
+        input,select{padding:10px;border:1px solid #ccc;border-radius:4px;flex:1;min-width:160px;}
+        button{padding:10px 16px;background:#2e7d32;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;transition:0.3s;}
+        button:hover{background:#1b5e20;transform:translateY(-1px);}
+        table{width:100%;border-collapse:collapse;margin-top:20px;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        th,td{border:1px solid #ddd;padding:12px;text-align:center;}
+        th{background:#2e7d32;color:white;}
+        tr:nth-child(even){background:#f9f9f9;}
+        .card{flex:1;min-width:220px;background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.08);text-align:center;}
+        #dashboard{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:25px;}
         
-        .btn-action { border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 5px; font-size: 11px; color: white; }
-        .btn-bulk { background: #25D366; }
-        .btn-excel { background: #1d6f42; }
+        /* QR Code Section Styling */
+        #qr-container { 
+            display: none; 
+            text-align: center; 
+            margin-top: 15px; 
+            padding: 15px; 
+            border: 2px dashed #2e7d32; 
+            border-radius: 8px; 
+            background: #f1f8e9;
+        }
+        .qr-image { width: 150px; height: 150px; border-radius: 5px; margin-bottom: 5px; }
+        .qr-label { display: block; font-size: 12px; font-weight: bold; color: #1b5e20; margin-bottom: 10px; }
 
-        .card { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border-color); }
-        h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid var(--secondary); padding-bottom: 8px; margin-bottom: 15px; }
-
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #666; }
-        input, select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; }
-
-        #qrSection { display: none; text-align: center; padding: 20px; border: 2px dashed var(--accent); border-radius: 12px; margin-top: 15px; background: #fafafa; }
-        .qr-display { max-width: 180px; margin: 10px auto; border-radius: 8px; }
-
-        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 20px; font-size: 16px; }
+        /* Receipt Print Styles */
+        #receipt-print-wrapper { display: none; }
         
-        .search-box { width: 100%; padding: 12px; border: 2px solid var(--secondary); border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: var(--secondary); color: var(--primary); padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-
-        .btn-row { border: none; padding: 6px 10px; border-radius: 4px; color: white; cursor: pointer; font-size: 11px; font-weight: 600; margin-right: 4px; }
-        .wa-btn { background: #25D366; }
-        .prt-btn { background: #3b82f6; }
-        .del-btn { background: #ef4444; }
-
-        /* --- PRINT LOGIC FIXED FOR A4 --- */
-        #printArea { display: none; }
         @media print {
-            @page { size: A4; margin: 0; }
+            @page { size: A4; margin: 5mm; }
             body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { 
-                display: block !important; 
-                position: absolute; left: 0; top: 0; width: 100%; padding: 10mm; box-sizing: border-box;
+            #receipt-print-wrapper, #receipt-print-wrapper * { visibility: visible; }
+            #receipt-print-wrapper { display: block; position: absolute; left: 0; top: 0; width: 100%; }
+            .receipt-box { 
+                border: 2px solid #333; padding: 15px; position: relative; 
+                height: 480px; 
+                box-sizing: border-box; margin-bottom: 10px;
             }
-            .receipt { 
-                visibility: visible;
-                height: 130mm; /* Ensures two receipts fit on 297mm A4 */
-                border: 2px solid #333; 
-                padding: 15mm; 
-                margin-bottom: 10mm; 
-                position: relative; 
-                color: black; 
-                background: white;
-                box-sizing: border-box;
-            }
-            .receipt-header { display: flex; align-items: center; border-bottom: 3px solid #15803d; padding-bottom: 10px; margin-bottom: 15px; }
-            .receipt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
-            .receipt-grid div { border-bottom: 1px dashed #ccc; padding: 5px 0; }
-            .sig-box { display: flex; justify-content: space-between; position: absolute; bottom: 15mm; width: calc(100% - 30mm); font-weight: bold; }
+            .cut-line { border-top: 2px dashed #000; margin: 15px 0; text-align: center; position: relative; }
+            .cut-line:after { content: "✂ Office Copy Below"; font-size: 12px; position: absolute; top: -10px; left: 42%; background: white; padding: 0 10px; }
         }
+
+        .receipt-header { display: flex; align-items: center; border-bottom: 2px solid #1b5e20; padding-bottom: 5px; margin-bottom: 10px; }
+        .receipt-logo { height: 60px; width: auto; margin-right: 15px; }
+        .receipt-title { flex-grow: 1; text-align: center; }
+        .receipt-title h1 { margin: 0; font-size: 22px; color: #1b5e20; }
+        .copy-tag { position: absolute; top: 10px; right: 10px; background: #eee; padding: 2px 6px; font-size: 10px; font-weight: bold; border: 1px solid #ccc; }
+        
+        .wa-btn { background: #25D366 !important; margin-left: 2px; }
     </style>
 </head>
 <body>
 
+<header>EWS Coaching Fee Management System</header>
+
 <div class="container">
-    <header class="no-print">
-        <img src="ews_logo.jpg" id="logoImg" class="logo-img" alt="Logo" onerror="this.style.display='none'">
-        <div>
-            <h1>EWS Coaching</h1>
-            <p>Enjoy With Subject • Professional Management</p>
-        </div>
-    </header>
+    <div class="main-logo-container"><img src="ews_logo.jpg" alt="EWS Logo" class="main-logo"></div>
 
-    <div class="dashboard no-print">
-        <div class="dash-card">
-            <h4>Total Students</h4>
-            <p id="dash-students">0</p>
-        </div>
-        <div class="dash-card" style="border-left-color: #22c55e;">
-            <h4>Total Collection</h4>
-            <p id="dash-collection">₹0</p>
-        </div>
-        <div class="dash-card" style="border-left-color: #ef4444;">
-            <h4>Total Due</h4>
-            <p id="dash-due">₹0</p>
-        </div>
-        <div class="dash-card" style="border-left-color: #25D366;">
-            <h4>Quick Tools</h4>
-            <div style="display:flex; gap:5px;">
-                <button class="btn-action btn-bulk" onclick="sendBulkWA()">Bulk Due Reminders</button>
-                <button class="btn-action btn-excel" onclick="downloadExcel()">Export Excel</button>
-            </div>
+    <div id="dashboard">
+        <div class="card"><h3>Students</h3><p id="totalStudents" style="font-size:24px;color:#1b5e20;">0</p></div>
+        <div class="card"><h3>Collected</h3><p id="totalCollected" style="font-size:24px;color:#2e7d32;">₹0</p></div>
+        <div class="card"><h3>Total Pending</h3><p id="totalPending" style="font-size:24px;color:#d32f2f;">₹0</p></div>
+    </div>
+
+    <div class="card" style="text-align:left; margin-bottom:20px;">
+        <h3>Student Admission</h3>
+        <div class="form-row">
+            <input id="reg" placeholder="Reg ID">
+            <input id="name" placeholder="Name">
+            <input id="course" placeholder="Course">
+            <input id="phone" placeholder="Phone">
+            <input id="discountFee" type="number" placeholder="Total Payable Fee">
+            <input id="totalInstallments" type="number" placeholder="Total Installments (e.g. 4)">
+            <button onclick="saveStudent()">Register</button>
+            <button onclick="exportStudents()" style="background:#1565c0;">Export Students Excel</button>
         </div>
     </div>
 
-    <form id="feeForm" class="no-print">
-        <div class="card">
-            <h3>1. Student Details</h3>
-            <div class="form-grid">
-                <div class="form-group"><label>Date</label><input type="date" id="date"></div>
-                <div class="form-group"><label>Receipt No.</label><input type="text" id="sn" readonly></div>
-                <div class="form-group"><label>Reg No. (Autofill)</label><input type="text" id="reg" oninput="doAutofill()"></div>
-                <div class="form-group"><label>Name</label><input type="text" id="name"></div>
-                <div class="form-group"><label>Mobile</label><input type="tel" id="mobile"></div>
-                <div class="form-group"><label>Course</label><input type="text" id="course"></div>
-            </div>
+    <div class="card" style="text-align:left;">
+        <h3>Fee Payment Entry</h3>
+        <div class="form-row">
+            <input id="searchReg" placeholder="Reg ID" oninput="autoFill()">
+            <input id="studentName" placeholder="Name" readonly style="background:#eee;">
+            <select id="payMode" onchange="toggleQR()">
+                <option value="Cash">Cash</option>
+                <option value="UPI/Online">UPI/Online</option>
+            </select>
+            <input id="payAmount" type="number" placeholder="Payment Amount">
+            <input id="instDisplay" placeholder="Installment No." readonly style="background:#eee; max-width: 120px;">
+            <input id="nextDueDate" type="date" title="Next Payment Due Date">
+            <button onclick="savePayment()">Submit & Print</button>
         </div>
 
-        <div class="card">
-            <h3>2. Fee Payment</h3>
-            <div class="form-grid">
-                <div class="form-group"><label>Actual Fee (₹)</label><input type="number" id="fee_act" oninput="calc()"></div>
-                <div class="form-group"><label>Discounted Fee (₹)</label><input type="number" id="fee_disc" oninput="calc()"></div>
-                <div class="form-group"><label>Paid Today (₹)</label><input type="number" id="fee_paid" oninput="calc()"></div>
-                <div class="form-group"><label>Balance Due (₹)</label><input type="number" id="fee_due" readonly style="color:red; font-weight:bold;"></div>
-                <div class="form-group">
-                    <label>Payment Mode</label>
-                    <select id="mode" onchange="toggleQR()">
-                        <option value="Cash">Cash</option>
-                        <option value="UPI">UPI / PhonePe</option>
-                        <option value="Bank">Bank Transfer</option>
-                    </select>
-                </div>
-                <div class="form-group"><label>Next Due Date</label><input type="date" id="nextDate"></div>
-            </div>
-            
-            <div id="qrSection">
-                <p><strong>SCAN TO PAY</strong></p>
-                <img src="qr_code.jpg" id="qrImg" class="qr-display" alt="QR" onerror="this.style.display='none'">
-            </div>
-
-            <button type="button" class="btn-main" onclick="submitData()">GENERATE & PRINT RECEIPT</button>
-        </div>
-    </form>
-
-    <div class="card no-print">
-        <h3>3. Student Ledger</h3>
-        <input type="text" id="search" class="search-box" placeholder="🔍 Search Name, Reg No, or Mobile..." oninput="updateTable()">
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Reg No.</th>
-                        <th>Name</th>
-                        <th>Paid</th>
-                        <th>Due</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="ledger"></tbody>
-            </table>
+        <div id="qr-container">
+            <span class="qr-label">SCAN TO PAY (UPI)</span>
+            <img src="qr_code.jpg" class="qr-image" alt="UPI QR Code" onerror="this.alt='Please ensure qr_code.jpg is in folder'">
         </div>
     </div>
+
+    <hr>
+    <h3>Payment Ledger</h3>
+    <div class="form-row">
+        <input id="filterName" placeholder="Search Name..." oninput="updateUI()">
+        <button onclick="exportLedger()" style="background:#1565c0;">Export Ledger Excel</button>
+        <button onclick="resetAllData()" style="background:#c62828;">Reset All to 0001</button>
+    </div>
+
+    <table id="ledgerTable">
+        <thead><tr><th>Serial</th><th>Reg</th><th>Name</th><th>Paid</th><th>Inst. No</th><th>Balance</th><th>Next Due</th><th>Action</th></tr></thead>
+        <tbody id="ledgerBody"></tbody>
+    </table>
 </div>
 
-<div id="printArea">
-    <div id="oCopy" class="receipt"></div>
-    <div id="pCopy" class="receipt"></div>
+<div id="receipt-print-wrapper">
+    <div class="dual-container">
+        <div class="receipt-box" id="student-copy">
+            <span class="copy-tag">STUDENT COPY</span>
+            <div class="receipt-header">
+                <img src="ews_logo.jpg" class="receipt-logo">
+                <div class="receipt-title"><h1>EWS COACHING CENTER</h1><p>Quality Education | Deoghar</p></div>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <div>
+                    <p><strong>Receipt No:</strong> <span class="r-ser"></span></p>
+                    <p><strong>Reg ID:</strong> <span class="r-reg"></span></p>
+                    <p><strong>Student:</strong> <span class="r-name"></span></p>
+                </div>
+                <div style="text-align:right;">
+                    <p><strong>Date:</strong> <span class="r-date"></span></p>
+                    <p><strong>Mode:</strong> <span class="r-mode"></span></p>
+                </div>
+            </div>
+            <table style="width:100%; margin:10px 0; border: 1px solid #ddd; border-collapse: collapse;">
+                <tr style="background:#f2f2f2;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">Description</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Amount</th>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">Fee Installment (<span class="r-inst"></span>)</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; font-weight:bold;">₹<span class="r-amount"></span></td>
+                </tr>
+            </table>
+            <p><strong>Remaining Balance:</strong> ₹<span class="r-bal"></span></p>
+            <p><strong>Next Payment Due:</strong> <span class="r-due"></span></p>
+            <div style="margin-top:40px; display:flex; justify-content:space-between;">
+                <p>________________<br>Student</p><p>________________<br>Authorized Signatory</p>
+            </div>
+        </div>
+        <div class="cut-line"></div>
+        <div class="receipt-box" id="office-copy"></div>
+    </div>
 </div>
 
 <script>
-    let sn = parseInt(localStorage.getItem('ews_sn_count')) || 1001;
-    let dataList = JSON.parse(localStorage.getItem('ews_db')) || [];
+let students = JSON.parse(localStorage.getItem("students")) || {};
+let ledger = JSON.parse(localStorage.getItem("ledger")) || [];
 
-    document.getElementById('sn').value = "EWS-" + sn;
-    document.getElementById('date').valueAsDate = new Date();
+function saveStudent() {
+    let reg = document.getElementById("reg").value.trim();
+    let totalInst = document.getElementById("totalInstallments").value;
+    if(!reg || students[reg]) { alert("ID exists or empty"); return; }
+    students[reg] = { 
+        name: document.getElementById("name").value, 
+        course: document.getElementById("course").value,
+        phone: document.getElementById("phone").value,
+        discountFee: Number(document.getElementById("discountFee").value),
+        totalInstallments: Number(totalInst) || 1
+    };
+    localStorage.setItem("students", JSON.stringify(students));
+    alert("Student Registered Successfully");
+    updateUI();
+}
 
-    function calc() {
-        let disc = parseFloat(document.getElementById('fee_disc').value) || 0;
-        let paid = parseFloat(document.getElementById('fee_paid').value) || 0;
-        document.getElementById('fee_due').value = disc - paid;
+function autoFill() {
+    let reg = document.getElementById("searchReg").value.trim();
+    let s = students[reg];
+    if(s) {
+        document.getElementById("studentName").value = s.name;
+        let count = ledger.filter(l => l.reg === reg).length;
+        document.getElementById("instDisplay").value = "Inst: " + (count + 1) + "/" + s.totalInstallments;
+    } else {
+        document.getElementById("studentName").value = "";
+        document.getElementById("instDisplay").value = "";
     }
+}
 
-    function toggleQR() {
-        document.getElementById('qrSection').style.display = (document.getElementById('mode').value === 'UPI') ? 'block' : 'none';
+function toggleQR() {
+    const payMode = document.getElementById("payMode").value;
+    const qrContainer = document.getElementById("qr-container");
+    qrContainer.style.display = (payMode === "UPI/Online") ? "block" : "none";
+}
+
+function savePayment() {
+    let reg = document.getElementById("searchReg").value.trim();
+    let amt = Number(document.getElementById("payAmount").value);
+    let due = document.getElementById("nextDueDate").value;
+    if(!students[reg] || amt <= 0) return alert("Invalid entry");
+
+    let studentPayments = ledger.filter(l => l.reg === reg);
+    let prevPaid = studentPayments.reduce((sum, l) => sum + l.amount, 0);
+    let instNum = studentPayments.length + 1;
+    
+    // STARTING SERIAL FROM 0001
+    let serial = "REC-" + (ledger.length + 1).toString().padStart(4, '0');
+
+    let entry = {
+        serial: serial,
+        reg: reg,
+        name: students[reg].name,
+        amount: amt,
+        mode: document.getElementById("payMode").value,
+        installmentNo: instNum + " of " + students[reg].totalInstallments,
+        remaining: students[reg].discountFee - (prevPaid + amt),
+        date: new Date().toLocaleDateString('en-IN'),
+        dueDate: due ? new Date(due).toLocaleDateString('en-IN') : "N/A"
+    };
+
+    ledger.push(entry);
+    localStorage.setItem("ledger", JSON.stringify(ledger));
+    printReceipt(entry);
+    sendWhatsApp(entry, 'payment');
+    updateUI();
+}
+
+function sendWhatsApp(data, type) {
+    let phone = students[data.reg].phone;
+    if(!phone) return;
+    phone = phone.replace(/\D/g, '');
+    if(phone.length === 10) phone = "91" + phone;
+    let message = "";
+    if(type === 'payment') {
+        message = `*EWS COACHING CENTER*%0A%0AHello ${data.name},%0AYour payment of *₹${data.amount}* has been received successfully via ${data.mode}.%0A%0A*Installment:* ${data.installmentNo}%0A*Remaining Due:* ₹${data.remaining}%0A*Next Due Date:* ${data.dueDate}%0A%0AThank you!`;
+    } else if(type === 'due') {
+        message = `*DUE REMINDER - EWS COACHING*%0A%0AHello ${data.name},%0AThis is a reminder to clear your current installment. %0A%0A*Pending Balance:* ₹${data.remaining}%0A*Due Date reached:* ${data.dueDate}%0A%0APlease ignore if already paid.`;
     }
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+}
 
-    function doAutofill() {
-        let val = document.getElementById('reg').value.trim().toUpperCase();
-        if(!val) return;
-        let found = dataList.find(i => i.reg.toUpperCase() === val);
-        if(found) {
-            document.getElementById('name').value = found.name;
-            document.getElementById('mobile').value = found.mobile;
-            document.getElementById('course').value = found.course;
+function printReceipt(data) {
+    document.querySelectorAll(".r-ser").forEach(el => el.innerText = data.serial);
+    document.querySelectorAll(".r-reg").forEach(el => el.innerText = data.reg);
+    document.querySelectorAll(".r-name").forEach(el => el.innerText = data.name);
+    document.querySelectorAll(".r-amount").forEach(el => el.innerText = data.amount);
+    document.querySelectorAll(".r-bal").forEach(el => el.innerText = data.remaining);
+    document.querySelectorAll(".r-date").forEach(el => el.innerText = data.date);
+    document.querySelectorAll(".r-mode").forEach(el => el.innerText = data.mode);
+    document.querySelectorAll(".r-due").forEach(el => el.innerText = data.dueDate);
+    document.querySelectorAll(".r-inst").forEach(el => el.innerText = data.installmentNo);
+    document.getElementById("office-copy").innerHTML = document.getElementById("student-copy").innerHTML;
+    document.querySelector("#office-copy .copy-tag").innerText = "OFFICE COPY";
+    setTimeout(() => { window.print(); }, 500);
+}
+
+function updateUI() {
+    const tbody = document.getElementById("ledgerBody");
+    const filter = document.getElementById("filterName").value.toLowerCase();
+    tbody.innerHTML = "";
+    let totalCollected = 0;
+    let totalPayableVal = 0;
+    Object.keys(students).forEach(reg => { totalPayableVal += students[reg].discountFee; });
+    ledger.forEach((l, index) => {
+        totalCollected += l.amount;
+        if(l.name.toLowerCase().includes(filter)) {
+            tbody.innerHTML += `<tr>
+                <td>${l.serial}</td><td>${l.reg}</td><td>${l.name}</td>
+                <td>₹${l.amount}</td><td>${l.installmentNo}</td><td>₹${l.remaining}</td>
+                <td>${l.dueDate}</td>
+                <td>
+                    <button onclick="sendWhatsApp(ledger[${index}], 'payment')" class="wa-btn">WA</button>
+                    <button onclick="sendWhatsApp(ledger[index], 'due')" class="wa-btn" style="background:#d32f2f !important;">Alert</button>
+                    <button onclick="deleteEntry('${l.serial}')" style="background:red; padding:5px;">Del</button>
+                </td>
+            </tr>`;
         }
-    }
+    });
+    document.getElementById("totalStudents").innerText = Object.keys(students).length;
+    document.getElementById("totalCollected").innerText = "₹" + totalCollected;
+    document.getElementById("totalPending").innerText = "₹" + (totalPayableVal - totalCollected);
+}
 
-    function updateDashboard() {
-        const uniqueRegs = new Set(dataList.map(item => item.reg.toUpperCase()));
-        const totalPaid = dataList.reduce((sum, item) => sum + (parseFloat(item.paid) || 0), 0);
-        let studentLatestDue = {};
-        dataList.forEach(item => { studentLatestDue[item.reg.toUpperCase()] = parseFloat(item.due) || 0; });
-        const totalDue = Object.values(studentLatestDue).reduce((a, b) => a + b, 0);
-        document.getElementById('dash-students').innerText = uniqueRegs.size;
-        document.getElementById('dash-collection').innerText = "₹" + totalPaid.toLocaleString();
-        document.getElementById('dash-due').innerText = "₹" + totalDue.toLocaleString();
-    }
+function exportStudents() {
+    let data = Object.keys(students).map(reg => ({
+        "Reg ID": reg, "Name": students[reg].name, "Course": students[reg].course,
+        "Phone": students[reg].phone, "Total Fee": students[reg].discountFee, "Installments": students[reg].totalInstallments
+    }));
+    let ws = XLSX.utils.json_to_sheet(data);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, "EWS_Students_List.xlsx");
+}
 
-    function downloadExcel() {
-        if(dataList.length === 0) return alert("No data to export");
-        const ws = XLSX.utils.json_to_sheet(dataList);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Ledger");
-        XLSX.writeFile(wb, "EWS_Coaching_Ledger.xlsx");
-    }
+function exportLedger() {
+    let data = ledger.map(l => ({
+        "Serial": l.serial, "Reg ID": l.reg, "Name": l.name, "Amount Paid": l.amount,
+        "Mode": l.mode, "Installment": l.installmentNo, "Balance": l.remaining, "Date": l.date, "Next Due": l.dueDate
+    }));
+    let ws = XLSX.utils.json_to_sheet(data);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ledger");
+    XLSX.writeFile(wb, "EWS_Payment_Ledger.xlsx");
+}
 
-    /* --- FIXED BULK WHATSAPP LOGIC --- */
-    function sendBulkWA() {
-        let studentsWithDue = {};
-        dataList.forEach(item => {
-            if (parseFloat(item.due) > 0) { 
-                studentsWithDue[item.reg.toUpperCase()] = item; 
-            }
-        });
-        const list = Object.values(studentsWithDue);
-        if (list.length === 0) return alert("No students with pending dues.");
-        
-        if (confirm(`This will open ${list.length} WhatsApp chats one by one. Please allow pop-ups if prompted. Proceed?`)) {
-            list.forEach((s, i) => {
-                setTimeout(() => {
-                    let msg = `*EWS Coaching Reminder*%0A%0AHi ${s.name}, your pending due amount is *₹${s.due}*. Please clear it by ${s.next}.%0A%0A_Thank you!_`;
-                    window.open(`https://wa.me/91${s.mobile}?text=${msg}`, '_blank');
-                }, i * 2500); // 2.5 second delay between windows to prevent browser freezing
-            });
-        }
+function deleteEntry(ser) {
+    if(confirm("Delete record?")) {
+        ledger = ledger.filter(l => l.serial !== ser);
+        localStorage.setItem("ledger", JSON.stringify(ledger));
+        updateUI();
     }
+}
 
-    function updateTable() {
-        let q = document.getElementById('search').value.toLowerCase();
-        let rows = '';
-        dataList.slice().reverse().forEach(item => {
-            if(item.name.toLowerCase().includes(q) || item.reg.toLowerCase().includes(q) || item.mobile.includes(q)) {
-                rows += `<tr>
-                    <td>${item.date}</td>
-                    <td>${item.reg}</td>
-                    <td><strong>${item.name}</strong></td>
-                    <td>₹${item.paid}</td>
-                    <td style="color:red">₹${item.due}</td>
-                    <td>
-                        <button class="btn-row wa-btn" onclick="individualWA('${item.mobile}', '${item.name}', '${item.due}', '${item.next}')">WA</button>
-                        <button class="btn-row prt-btn" onclick="reprint(${item.id})">Print</button>
-                        <button class="btn-row del-btn" onclick="delItem(${item.id})">Del</button>
-                    </td>
-                </tr>`;
-            }
-        });
-        document.getElementById('ledger').innerHTML = rows;
-        updateDashboard();
-    }
+function resetAllData() { 
+    if(confirm("This will clear ALL current data and reset Serials to 0001. Proceed?")) { 
+        localStorage.clear(); 
+        location.reload(); 
+    } 
+}
 
-    function individualWA(n, nm, d, dt) {
-        let msg = `Dear ${nm}, your pending due is ₹${d}. Please clear it by ${dt}. - EWS Coaching`;
-        window.open(`https://wa.me/91${n}?text=${encodeURIComponent(msg)}`);
-    }
-
-    function submitData() {
-        if(!document.getElementById('name').value || !document.getElementById('fee_paid').value) return alert("Fill all details");
-        let entry = {
-            id: Date.now(),
-            sn: document.getElementById('sn').value,
-            date: document.getElementById('date').value,
-            reg: document.getElementById('reg').value,
-            name: document.getElementById('name').value,
-            mobile: document.getElementById('mobile').value,
-            course: document.getElementById('course').value,
-            act: document.getElementById('fee_act').value,
-            disc: document.getElementById('fee_disc').value,
-            paid: document.getElementById('fee_paid').value,
-            due: document.getElementById('fee_due').value,
-            mode: document.getElementById('mode').value,
-            next: document.getElementById('nextDate').value || 'N/A'
-        };
-        dataList.push(entry);
-        localStorage.setItem('ews_db', JSON.stringify(dataList));
-        localStorage.setItem('ews_sn_count', ++sn);
-        doPrint(entry);
-        setTimeout(() => { location.reload(); }, 1000);
-    }
-
-    function reprint(id) {
-        let item = dataList.find(i => i.id === id);
-        if(item) doPrint(item);
-    }
-
-    function doPrint(data) {
-        let logo = document.getElementById('logoImg').src;
-        let tpl = (type) => `
-            <div class="receipt-header">
-                <img src="${logo}" style="height:50px; margin-right:15px;" onerror="this.style.display='none'">
-                <div style="flex:1; text-align:center;">
-                    <h2 style="margin:0; color:#15803d; font-size:22px;">EWS COACHING</h2>
-                    <p style="margin:0; font-size:11px;">Enjoy With Subject | RECEIPT (${type})</p>
-                </div>
-            </div>
-            <div class="receipt-grid">
-                <div><strong>Receipt No:</strong> ${data.sn}</div><div><strong>Date:</strong> ${data.date}</div>
-                <div><strong>Reg No:</strong> ${data.reg}</div><div><strong>Course:</strong> ${data.course}</div>
-                <div><strong>Student Name:</strong> ${data.name}</div><div><strong>Mobile:</strong> ${data.mobile}</div>
-                <div><strong>Total Fee:</strong> ₹${data.disc}</div><div><strong>Paid Today:</strong> ₹${data.paid}</div>
-                <div><strong>Mode:</strong> ${data.mode}</div><div><strong>Balance Due:</strong> ₹${data.due}</div>
-                <div style="grid-column: span 2;"><strong>Next Due Date:</strong> ${data.next}</div>
-            </div>
-            <div class="sig-box"><p>Parent Signature</p><p>Authorized Signatory</p></div>`;
-        document.getElementById('oCopy').innerHTML = tpl("OFFICE COPY");
-        document.getElementById('pCopy').innerHTML = tpl("STUDENT COPY");
-        window.print();
-    }
-
-    function delItem(id) {
-        if(confirm("Delete record?")) {
-            dataList = dataList.filter(i => i.id !== id);
-            localStorage.setItem('ews_db', JSON.stringify(dataList));
-            updateTable();
-        }
-    }
-    updateTable();
+updateUI();
 </script>
 </body>
 </html>
