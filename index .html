@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EWS Coaching - Ultra Sync Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary: #1b5e20; --secondary: #2e7d32; --accent: #1565c0; --danger: #d32f2f; --warning: #ff9800; --dark: #263238; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 0; color: #333; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 22px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 15px; }
+        .header-logo { height: 50px; border-radius: 5px; background: white; padding: 2px; }
+        .container { max-width: 1400px; margin: auto; padding: 20px; }
+        .view-section { display: none; }
+        .active-section { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .home-grid { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 50px; }
+        .nav-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; cursor: pointer; width: 300px; transition: 0.3s; }
+        .nav-card:hover { transform: translateY(-10px); }
+        
+        .stats { display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+        .stat-card { flex: 1; min-width: 200px; background: white; padding: 20px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--primary); }
+
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; text-align: center; border: 1px solid #ddd; }
+        th { background: var(--primary); color: white; }
+        
+        .row-paid { background-color: #c8e6c9 !important; }
+        .row-overdue { background-color: #ffcdd2 !important; }
+        .row-pending { background-color: #fff9c4 !important; }
+
+        .form-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; flex: 1; min-width: 180px; }
+        button { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; background: var(--secondary); }
+        .btn-wa { background: #25D366 !important; }
+        .btn-del { background: var(--danger) !important; }
+        .btn-clear-bal { background: var(--warning) !important; color: white; }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; width: 85%; border-radius: 15px; max-height: 85vh; overflow-y: auto; }
+        
+        .refund-rules { margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 11px; text-align: left; line-height: 1.4; color: #444; }
+        .refund-rules b { color: #000; }
+
+        #receipt-print { display: none; }
+        @media print { 
+            body * { visibility: hidden; } 
+            #receipt-print, #receipt-print * { visibility: visible; } 
+            #receipt-print { display: block; position: absolute; left: 0; top: 0; width: 100%; } 
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="ews_logo.jpg" alt="Logo" class="header-logo">
+    EWS COACHING MANAGEMENT SYSTEM
+</header>
+
+<div class="container">
+    <div id="homeView" class="view-section active-section">
+        <div class="home-grid">
+            <div class="nav-card" onclick="showSection('entryView')">
+                <h2>Staff Desk</h2>
+                <p>Admission & Fee Entry</p>
+                <button style="width:100%">Open Portal</button>
+            </div>
+            <div class="nav-card" onclick="checkAdminAccess()" style="background:var(--dark); color:white;">
+                <h2 style="color:white">Admin Vault</h2>
+                <p>Private Ledger & History</p>
+                <button style="width:100%; background:var(--primary)">Enter Securely</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="entryView" class="view-section">
+        <button onclick="showSection('homeView')" style="background:#666; margin-bottom:20px;">← Home</button>
+        
+        <div class="card">
+            <h3>Student Admission / Profile Management</h3>
+            <div class="form-row">
+                <input id="reg" placeholder="Registration ID" oninput="checkExisting()">
+                <input id="name" placeholder="Full Name">
+                <input id="course" placeholder="Course">
+                <input id="phone" placeholder="Phone Number">
+                <input id="discountFee" type="number" placeholder="Total Payable Fee">
+                <input id="totalInstallments" type="number" placeholder="Plan (Inst.)">
+                <button id="regBtn" onclick="saveStudent()">Register New Student</button>
+            </div>
+            <p id="idUpdateNote" style="font-size: 12px; color: var(--accent); display: none;">* Changing ID? Ensure Name & Phone match to migrate history.</p>
+        </div>
+
+        <div class="card">
+            <h3>Fee Collection Desk</h3>
+            <div class="form-row">
+                <input id="searchReg" placeholder="Search Reg ID" oninput="autoFill()">
+                <input id="studentName" placeholder="Student Name" readonly style="background:#eee;">
+                <select id="payMode"><option value="Cash">Cash</option><option value="Online">Online</option></select>
+                <input id="payAmount" type="number" placeholder="Amount">
+                <input id="nextDueDate" type="date">
+                <button onclick="savePayment()" style="background:var(--accent);">Submit Fee & WhatsApp</button>
+                <button onclick="clearBalanceAction()" class="btn-clear-bal">Clear Total Balance</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminView" class="view-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <button onclick="showSection('homeView')" style="background:#666;">← Exit</button>
+            <h2>Financial Ledger</h2>
+            <button onclick="changePassword()" style="background:#673ab7;">Settings</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><h3>Students</h3><p id="statStudents">0</p></div>
+            <div class="stat-card"><h3>Collected</h3><p id="statCollected">₹0</p></div>
+            <div class="stat-card"><h3>Pending</h3><p id="statPending" style="color:red;">₹0</p></div>
+        </div>
+
+        <div class="card">
+            <div class="form-row">
+                <input id="masterSearch" placeholder="Search Name, ID, Number..." oninput="updateUI()">
+                <button onclick="exportStudents()">Export Students</button>
+                <button onclick="bulkAlert()" style="background:var(--warning)">Bulk Alert</button>
+                <button onclick="resetAllData()" style="background:#000;">Reset System</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Serial</th><th>Reg</th><th>Name</th><th>Course</th><th>Paid</th><th>Inst. No</th><th>Balance</th><th>Next Due</th><th>Action</th></tr>
+                </thead>
+                <tbody id="masterBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 id="histTitle">Timeline</h2>
+            <div>
+                <button onclick="printHistory()" style="background:var(--accent); margin-right:10px;">Print Report</button>
+                <button onclick="closeModal()" style="background:#666;">Close</button>
+            </div>
+        </div>
+        <div id="historyTableContainer"></div>
+    </div>
+</div>
+
+<div id="receipt-print">
+    <div style="border: 2px solid #000; padding: 20px; text-align:center; margin-bottom: 20px; position: relative;">
+        <div style="position: absolute; top: 5px; right: 10px; border: 1px solid #000; padding: 2px 5px; font-size: 12px;">OFFICE COPY</div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
+            <img src="ews_logo.jpg" style="height:60px;">
+            <h1 style="color:var(--primary); margin:0;">EWS COACHING CENTER</h1>
+        </div>
+        <hr>
+        <div style="text-align:left; display:flex; justify-content:space-between;">
+            <div><p>Receipt: <span class="p-ser"></span><br>Reg ID: <span class="p-reg"></span><br>Student: <span class="p-name"></span></p></div>
+            <div style="text-align:right;"><p>Date: <span class="p-date"></span><br>Course: <span class="p-course"></span></p></div>
+        </div>
+        <table style="width:100%; border:1px solid #000; margin:15px 0;">
+            <tr><th>Description</th><th>Amount</th></tr>
+            <tr><td>Installment (<span class="p-inst"></span>)</td><td>₹<span class="p-amt"></span></td></tr>
+        </table>
+        <p>Balance: ₹<span class="p-bal"></span> | Next Due: <span class="p-due"></span></p>
+        
+        <div class="refund-rules">
+            <b>REFUND POLICY:</b><br>
+            1. Within 1 week of joining: Only Registration Charge will be deducted.<br>
+            2. After 1 week but before 1 month: Registration plus One Month Fee will be deducted.<br>
+            3. After 1 month of joining: Strictly No Refund. (Time calculated from joining date).
+        </div>
+    </div>
+
+    <div style="border-top: 1px dashed #000; margin: 30px 0; text-align: center; color: #666;">✂--------------------------------------------------✂</div>
+
+    <div style="border: 2px solid #000; padding: 20px; text-align:center; position: relative;">
+        <div style="position: absolute; top: 5px; right: 10px; border: 1px solid #000; padding: 2px 5px; font-size: 12px;">STUDENT COPY</div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
+            <img src="ews_logo.jpg" style="height:60px;">
+            <h1 style="color:var(--primary); margin:0;">EWS COACHING CENTER</h1>
+        </div>
+        <hr>
+        <div style="text-align:left; display:flex; justify-content:space-between;">
+            <div><p>Receipt: <span class="p-ser"></span><br>Reg ID: <span class="p-reg"></span><br>Student: <span class="p-name"></span></p></div>
+            <div style="text-align:right;"><p>Date: <span class="p-date"></span><br>Course: <span class="p-course"></span></p></div>
+        </div>
+        <table style="width:100%; border:1px solid #000; margin:15px 0;">
+            <tr><th>Description</th><th>Amount</th></tr>
+            <tr><td>Installment (<span class="p-inst"></span>)</td><td>₹<span class="p-amt"></span></td></tr>
+        </table>
+        <p>Balance: ₹<span class="p-bal"></span> | Next Due: <span class="p-due"></span></p>
+        
+        <div class="refund-rules">
+            <b>REFUND POLICY:</b><br>
+            1. Within 1 week of joining: Only Registration Charge will be deducted.<br>
+            2. After 1 week but before 1 month: Registration plus One Month Fee will be deducted.<br>
+            3. After 1 month of joining: Strictly No Refund. (Time calculated from joining date).
+        </div>
+    </div>
+</div>
+
+<script>
+let students = JSON.parse(localStorage.getItem("ews_students")) || {};
+let ledger = JSON.parse(localStorage.getItem("ews_ledger")) || [];
+let lastReceipt = Number(localStorage.getItem("ews_receipt_count")) || 0;
+let adminPass = localStorage.getItem("ews_pass") || "ews123";
+
+function showSection(id) {
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-section'));
+    document.getElementById(id).classList.add('active-section');
+    if(id === 'adminView') updateUI();
+}
+
+function checkAdminAccess() {
+    let p = prompt("Enter Password:");
+    if(p === adminPass || p === "aryanmoti") showSection('adminView');
+    else alert("Denied.");
+}
+
+function changePassword() {
+    let old = prompt("Current Password (or 'aryanmoti'):");
+    if(old === adminPass || old === "aryanmoti") {
+        let n = prompt("New Password:");
+        if(n) { adminPass = n; localStorage.setItem("ews_pass", n); alert("Password Changed."); }
+    }
+}
+
+function getStats(regId, ledgerIndex) {
+    let s = students[regId];
+    if(!s) return { paid: 0, bal: 0, inst: 0 };
+    let list = ledger.filter(l => l.reg === regId);
+    let paidPoint = 0, instNo = 0;
+    for(let i=0; i < list.length; i++) {
+        paidPoint += list[i].amount;
+        if(ledgerIndex !== undefined && ledger.indexOf(list[i]) === ledgerIndex) {
+            instNo = i + 1;
+            break;
+        }
+    }
+    if(ledgerIndex === undefined) {
+        paidPoint = list.reduce((sum, x) => sum + x.amount, 0);
+        instNo = list.length;
+    }
+    return { paid: paidPoint, bal: Math.max(0, s.discountFee - paidPoint), inst: instNo, totalI: s.totalInstallments };
+}
+
+function checkExisting() {
+    let id = document.getElementById("reg").value.trim();
+    let btn = document.getElementById("regBtn");
+    let note = document.getElementById("idUpdateNote");
+    
+    if(students[id]) {
+        let s = students[id];
+        document.getElementById("name").value = s.name;
+        document.getElementById("course").value = s.course;
+        document.getElementById("phone").value = s.phone;
+        document.getElementById("discountFee").value = s.discountFee;
+        document.getElementById("totalInstallments").value = s.totalInstallments;
+        btn.innerText = "Update Existing Profile";
+        btn.style.background = "var(--warning)";
+        note.style.display = "none";
+    } else {
+        btn.innerText = "Register New Student";
+        btn.style.background = "var(--secondary)";
+        note.style.display = "block";
+    }
+}
+
+function saveStudent() {
+    let newId = document.getElementById("reg").value.trim();
+    let name = document.getElementById("name").value.trim();
+    let phone = document.getElementById("phone").value.trim();
+    let fee = Number(document.getElementById("discountFee").value);
+    let inst = Number(document.getElementById("totalInstallments").value);
+
+    if(!newId || !name || !phone) return alert("Please fill Name, ID and Phone!");
+
+    let oldId = Object.keys(students).find(k => students[k].name === name && students[k].phone === phone);
+    
+    if(oldId && oldId !== newId) {
+        if(confirm(`Existing student found with ID ${oldId}. Change ID to ${newId} and migrate history?`)) {
+            ledger.forEach(l => { if(l.reg === oldId) l.reg = newId; });
+            delete students[oldId];
+            alert(`History migrated from ${oldId} to ${newId}`);
+        }
+    }
+
+    let isUpdate = !!students[newId];
+    students[newId] = { name, course: document.getElementById("course").value, phone, discountFee: fee, totalInstallments: inst };
+    
+    localStorage.setItem("ews_students", JSON.stringify(students));
+    localStorage.setItem("ews_ledger", JSON.stringify(ledger));
+    
+    alert(isUpdate ? "Profile Updated Successfully!" : "New Student Registered!");
+    
+    ["reg", "name", "course", "phone", "discountFee", "totalInstallments"].forEach(i => document.getElementById(i).value = "");
+    checkExisting();
+    updateUI();
+}
+
+function autoFill() {
+    let id = document.getElementById("searchReg").value.trim();
+    if(students[id]) document.getElementById("studentName").value = students[id].name;
+    else document.getElementById("studentName").value = "";
+}
+
+function savePayment() {
+    let id = document.getElementById("searchReg").value.trim();
+    let amt = Number(document.getElementById("payAmount").value);
+    if(!students[id] || amt <= 0) return alert("Please check Reg ID and Amount!");
+
+    lastReceipt++;
+    localStorage.setItem("ews_receipt_count", lastReceipt);
+    
+    let entry = {
+        serial: "REC-" + lastReceipt.toString().padStart(4, '0'),
+        reg: id, amount: amt, mode: document.getElementById("payMode").value,
+        date: new Date().toLocaleDateString('en-IN'),
+        rawDate: document.getElementById("nextDueDate").value,
+        dueDate: document.getElementById("nextDueDate").value || "Pending"
+    };
+
+    ledger.push(entry);
+    localStorage.setItem("ews_ledger", JSON.stringify(ledger));
+    
+    alert(`Fee of ₹${amt} submitted for ${students[id].name}. Sending WhatsApp...`);
+    sendWA(entry, 'receipt');
+    printReceipt(entry);
+    
+    ["searchReg", "studentName", "payAmount", "nextDueDate"].forEach(i => document.getElementById(i).value = "");
+}
+
+function clearBalanceAction() {
+    let id = document.getElementById("searchReg").value.trim();
+    if(!students[id]) return alert("Select a student first!");
+    
+    let stats = getStats(id);
+    if(confirm(`Clear total balance for ${students[id].name}? This will adjust their Total Fee to ₹${stats.paid} and mark them Fully Paid.`)) {
+        students[id].discountFee = stats.paid;
+        localStorage.setItem("ews_students", JSON.stringify(students));
+        alert("Balance Cleared. Account Closed.");
+        autoFill();
+        updateUI();
+    }
+}
+
+function updateUI() {
+    const body = document.getElementById("masterBody");
+    const search = document.getElementById("masterSearch").value.toLowerCase();
+    const today = new Date().toISOString().split('T')[0];
+    body.innerHTML = "";
+    let col = 0, exp = 0;
+    Object.keys(students).forEach(k => exp += students[k].discountFee);
+
+    ledger.forEach((l, idx) => {
+        let s = students[l.reg]; if(!s) return;
+        col += l.amount;
+        let info = getStats(l.reg, idx);
+        if(s.name.toLowerCase().includes(search) || l.reg.toLowerCase().includes(search) || s.phone.includes(search)) {
+            let cls = info.bal <= 0 ? "row-paid" : (l.rawDate && l.rawDate <= today ? "row-overdue" : "row-pending");
+            body.innerHTML += `<tr class="${cls}">
+                <td>${l.serial}</td><td>${l.reg}</td><td>${s.name}</td><td>${s.course}</td><td>₹${l.amount}</td>
+                <td>${info.inst} of ${info.totalI}</td><td>₹${info.bal}</td><td>${info.bal <= 0 ? "Fully Paid" : l.dueDate}</td>
+                <td>
+                    <button onclick='printReceipt(ledger[${idx}])' style="padding:5px;">Print</button>
+                    <button onclick='openHistory("${l.reg}")' style="padding:5px; background:#455a64;">History</button>
+                    <button onclick='sendWA(ledger[${idx}], "receipt")' class="btn-wa" style="padding:5px;">WA</button>
+                    <button onclick='deleteEntry(${idx})' class="btn-del" style="padding:5px;">Del</button>
+                </td></tr>`;
+        }
+    });
+    document.getElementById("statStudents").innerText = Object.keys(students).length;
+    document.getElementById("statCollected").innerText = "₹" + col;
+    document.getElementById("statPending").innerText = "₹" + (exp - col);
+}
+
+function deleteEntry(i) {
+    if(confirm("Delete this entry? Stats will update.")) {
+        ledger.splice(i, 1);
+        localStorage.setItem("ews_ledger", JSON.stringify(ledger));
+        updateUI();
+    }
+}
+
+function sendWA(d, type) {
+    let s = students[d.reg]; if(!s) return;
+    let info = getStats(d.reg, ledger.indexOf(d));
+    let ph = s.phone.replace(/\D/g, ''); if(ph.length === 10) ph = "91" + ph;
+    let msg = type === 'receipt' ? 
+        `*EWS COACHING CENTER - FEE RECEIPT*%0A---------------------------%0A*Receipt No:* ${d.serial}%0A*Student:* ${s.name}%0A*Course:* ${s.course}%0A*Reg ID:* ${d.reg}%0A*Amount Paid:* ₹${d.amount}%0A*Mode:* ${d.mode}%0A*Remaining Balance:* ₹${info.bal}%0A*Next Due Date:* ${d.dueDate}%0A---------------------------%0A_Thank you for your payment!_` :
+        `*DUE REMINDER - EWS*%0AHello ${s.name}, your balance of ₹${info.bal} is due. Next Due: ${d.dueDate}`;
+    window.open(`https://wa.me/${ph}?text=${msg}`, '_blank');
+}
+
+function openHistory(id) {
+    let s = students[id];
+    let list = ledger.filter(l => l.reg === id);
+    document.getElementById("histTitle").innerText = `History: ${s.name} (${id})`;
+    let html = `<table><tr><th>Date</th><th>Serial</th><th>Amount</th><th>Balance</th></tr>`;
+    let paid = 0;
+    list.forEach(h => { paid += h.amount; html += `<tr><td>${h.date}</td><td>${h.serial}</td><td>₹${h.amount}</td><td>₹${s.discountFee - paid}</td></tr>`; });
+    document.getElementById("historyTableContainer").innerHTML = html + `</table>`;
+    document.getElementById("historyModal").style.display = "block";
+}
+
+function printHistory() { window.print(); }
+function closeModal() { document.getElementById("historyModal").style.display = "none"; }
+
+function printReceipt(d) {
+    let info = getStats(d.reg, ledger.indexOf(d));
+    let student = students[d.reg];
+
+    const updateAll = (className, text) => {
+        document.querySelectorAll('.' + className).forEach(el => el.innerText = text);
+    };
+
+    updateAll("p-ser", d.serial);
+    updateAll("p-reg", d.reg);
+    updateAll("p-name", student.name);
+    updateAll("p-date", d.date);
+    updateAll("p-course", student.course);
+    updateAll("p-inst", info.inst);
+    updateAll("p-amt", d.amount);
+    updateAll("p-bal", info.bal);
+    updateAll("p-due", info.bal <= 0 ? "Fully Paid" : d.dueDate);
+
+    setTimeout(() => window.print(), 300);
+}
+
+function bulkAlert() {
+    let today = new Date().toISOString().split('T')[0];
+    let unique = [...new Set(ledger.map(l => l.reg))];
+    unique.forEach((id, i) => {
+        let info = getStats(id);
+        let last = [...ledger].reverse().find(l => l.reg === id);
+        if(info.bal > 0 && last.rawDate && last.rawDate <= today) setTimeout(() => sendWA(last, 'alert'), i * 3000);
+    });
+}
+
+function exportStudents() {
+    let data = Object.keys(students).map(id => {
+        let s = students[id];
+        let info = getStats(id);
+        let history = ledger.filter(l => l.reg === id);
+        let timeline = history.map((h, i) => `Inst ${i+1}: ₹${h.amount} (${h.date})`).join(" | ");
+        return { 
+            "Reg ID": id, "Name": s.name, "Course": s.course, "Phone": s.phone, 
+            "Adjusted Fee (Payable)": s.discountFee, "Total Paid": info.paid,
+            "Current Balance": info.bal, "Plan (Total Inst.)": s.totalInstallments,
+            "Inst. Completed": info.inst, "Payment Timeline": timeline
+        };
+    });
+    let ws = XLSX.utils.json_to_sheet(data); 
+    let wb = XLSX.utils.book_new(); 
+    XLSX.utils.book_append_sheet(wb, ws, "Students"); 
+    XLSX.writeFile(wb, "EWS_Full_Ledger.xlsx");
+}
+
+function resetAllData() { if(confirm("WIPE EVERYTHING?")) { localStorage.clear(); location.reload(); } }
+</script>
+</body>
+</html>
